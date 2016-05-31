@@ -1,0 +1,110 @@
+#!/bin/bash
+
+# Print disk quotas for NFS and Lustre in a human readable format
+# https://github.com/jabl/lustre_human_quota
+
+#    Copyright (C) 2016  Janne Blomqvist
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+# Modify this to match wherever your have Lustre mounted
+lfs=/scratch
+
+if [ "$EUID" -eq 0 ]; then
+  test -n "$1" || exit
+  u=$1
+else
+  u=$USER
+fi
+
+shopt -s extglob
+
+hum() {
+    if [[ $1 -ge 10000000000 ]];then
+	echo "$(($1 / 1000**3))T"
+    elif [[ $1 -ge 10000000 ]];then
+	echo "$(($1 / 1000**2))G"
+    elif [[ $1 -ge 10000 ]];then
+	echo "$(($1 / 1000))M"
+    else
+	echo $1
+    fi
+}
+
+print_lquota() {
+    l=${1//\*/}
+    IFS=' ' read -r -a f <<< $l
+    if [[ ${f[1]} -eq 0 && ${f[5]} -eq 0 ]];then
+	return # No usage by this user/group
+    fi
+    spc=$(hum ${f[1]})
+    quot=$(hum ${f[2]})
+    lim=$(hum ${f[3]})
+    files=$(hum ${f[5]})
+    fquot=$(hum ${f[6]})
+    flim=$(hum ${f[7]})
+    printf "%-15s %7s %7s %7s %7s %7s %7s %7s %7s\n" ${f[0]} \
+	$spc $quot $lim ${f[4]} $files $fquot $flim ${f[8]}
+}
+
+
+echo "User quotas for $USER"
+IFS=
+{ 
+    read -r
+    read -r
+    echo $REPLY
+    read -r line
+    echo ${line/ \/home\/+([a-z0-9]) /\/home           }
+} < <(/usr/bin/quota -u $u --show-mntpoint -w --hide-device -s)
+
+{ 
+    read -r
+    read -r
+    read -r
+    print_lquota $REPLY
+} < <(lfs quota -u $u $lfs)
+
+echo
+echo "Group quotas"
+echo "Filesystem   group                  space   quota   limit   grace   files   quota   limit   grace"
+
+print_lquota_grp() {
+    l=${1//\*/}
+    IFS=' ' read -r -a f <<< $l
+    if [[ ${f[1]} -eq 0 && ${f[5]} -eq 0 ]];then
+	return # No usage by this user/group
+    fi
+    spc=$(hum ${f[1]})
+    quot=$(hum ${f[2]})
+    lim=$(hum ${f[3]})
+    files=$(hum ${f[5]})
+    fquot=$(hum ${f[6]})
+    flim=$(hum ${f[7]})
+    printf "%-12s %-20s %7s %7s %7s %7s %7s %7s %7s %7s\n" ${f[0]} \
+	$2 $spc $quot $lim ${f[4]} $files $fquot $flim ${f[8]}
+}
+
+
+while IFS= read -d $'\0' grp
+do
+    {
+	read -r
+	read -r
+	read -r
+	print_lquota_grp $REPLY $grp
+    } < <(lfs quota -g "$grp" "$lfs")
+done < <(id -Gnz $u)
+
