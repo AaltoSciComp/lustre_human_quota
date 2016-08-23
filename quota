@@ -60,7 +60,7 @@ print_lquota() {
 }
 
 
-echo "User quotas for $USER"
+echo "User quotas for $u"
 IFS=
 { 
     read -r
