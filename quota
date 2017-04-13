@@ -55,20 +55,22 @@ print_lquota() {
     if [[ ${f[1]} -eq 0 && ${f[5]} -eq 0 ]];then
 	return # No usage by this user/group
     fi
+    fsname="${f[0]}"
+    [ -n "$2" ] && fsname="$fsname $2"
     spc="$(hum ${f[1]} 1024)"
     quot="$(hum ${f[2]} 1024)"
     lim="$(hum ${f[3]} 1024)"
     files="$(hum ${f[5]})"
     fquot="$(hum ${f[6]})"
     flim="$(hum ${f[7]})"
-    printf "%-19s %7s %7s %7s %7s %7s %7s %7s %7s\n" ${f[0]} \
+    printf "%-20s %5s %7s %7s %7s  %7s %7s %7s %7s\n" "$fsname" \
 	"$spc" "$quot" "$lim" ${f[4]} "$files" "$fquot" "$flim" ${f[8]}
 }
 
 
 echo "User quotas for $u"
 IFS=
-{ 
+{
     read -r
     read -r
     echo $REPLY
@@ -76,11 +78,19 @@ IFS=
     echo ${line/ \/home\/+([a-z0-9]) /\/home           }
 } < <(/usr/bin/quota -u $u --show-mntpoint -w --hide-device -s)
 
+# Scratch group quota
+{
+    read -r
+    read -r
+    read -r
+    print_lquota $REPLY "(user qta)"
+} < <(lfs quota -g $u $lfs)
+# Scratch user quota
 { 
     read -r
     read -r
     read -r
-    print_lquota $REPLY
+    print_lquota $REPLY "(total use)"
 } < <(lfs quota -u $u $lfs)
 
 echo
