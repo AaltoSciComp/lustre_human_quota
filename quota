@@ -45,7 +45,7 @@ hum() {
     elif [[ $(($1 * $unit)) -ge 10000 ]];then
 	echo "$(($1 * $unit / 1000))k"
     else
-	echo $1
+	echo "$1 "
     fi
 }
 
@@ -55,14 +55,14 @@ print_lquota() {
     if [[ ${f[1]} -eq 0 && ${f[5]} -eq 0 ]];then
 	return # No usage by this user/group
     fi
-    spc=$(hum ${f[1]} 1024)
-    quot=$(hum ${f[2]} 1024)
-    lim=$(hum ${f[3]} 1024)
-    files=$(hum ${f[5]})
-    fquot=$(hum ${f[6]})
-    flim=$(hum ${f[7]})
-    printf "%-15s %7s %7s %7s %7s %7s %7s %7s %7s\n" ${f[0]} \
-	$spc $quot $lim ${f[4]} $files $fquot $flim ${f[8]}
+    spc="$(hum ${f[1]} 1024)"
+    quot="$(hum ${f[2]} 1024)"
+    lim="$(hum ${f[3]} 1024)"
+    files="$(hum ${f[5]})"
+    fquot="$(hum ${f[6]})"
+    flim="$(hum ${f[7]})"
+    printf "%-19s %7s %7s %7s %7s %7s %7s %7s %7s\n" ${f[0]} \
+	"$spc" "$quot" "$lim" ${f[4]} "$files" "$fquot" "$flim" ${f[8]}
 }
 
 
@@ -93,14 +93,14 @@ print_lquota_grp() {
     if [[ ${f[1]} -eq 0 && ${f[5]} -eq 0 ]];then
 	return # No usage by this user/group
     fi
-    spc=$(hum ${f[1]} 1024)
-    quot=$(hum ${f[2]} 1024)
-    lim=$(hum ${f[3]} 1024)
-    files=$(hum ${f[5]})
-    fquot=$(hum ${f[6]})
-    flim=$(hum ${f[7]})
+    spc="$(hum ${f[1]} 1024)"
+    quot="$(hum ${f[2]} 1024)"
+    lim="$(hum ${f[3]} 1024)"
+    files="$(hum ${f[5]})"
+    fquot="$(hum ${f[6]})"
+    flim="$(hum ${f[7]})"
     printf "%-12s %-20s %7s %7s %7s %7s %7s %7s %7s %7s\n" ${f[0]} \
-	$2 $spc $quot $lim ${f[4]} $files $fquot $flim ${f[8]}
+	$2 "$spc" "$quot" "$lim" ${f[4]} "$files" "$fquot" "$flim" ${f[8]}
 }
 
 
