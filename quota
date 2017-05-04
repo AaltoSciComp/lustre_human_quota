@@ -32,14 +32,20 @@ fi
 shopt -s extglob
 
 hum() {
-    if [[ $1 -ge 10000000000 ]];then
-	echo "$(($1 / 1000**3))T"
-    elif [[ $1 -ge 10000000 ]];then
-	echo "$(($1 / 1000**2))G"
-    elif [[ $1 -ge 10000 ]];then
-	echo "$(($1 / 1000))M"
+    # The second argument is the unit of input.  e.g. 1000=input is in KB.
+    unit="$2"
+    test -z "$unit" && unit=1
+    #
+    if [[ $(($1 * $unit)) -ge 10000000000000 ]];then
+	echo "$(($1 * unit / 1000**4))T"
+    elif [[ $(($1 * $unit)) -ge 10000000000 ]];then
+	echo "$(($1 * unit / 1000**3))G"
+    elif [[ $(($1 * $unit)) -ge 10000000 ]];then
+	echo "$(($1 * unit / 1000**2))M"
+    elif [[ $(($1 * $unit)) -ge 10000 ]];then
+	echo "$(($1 * $unit / 1000))k"
     else
-	echo $1
+	echo "$1 "
     fi
 }
 
@@ -49,20 +55,22 @@ print_lquota() {
     if [[ ${f[1]} -eq 0 && ${f[5]} -eq 0 ]];then
 	return # No usage by this user/group
     fi
-    spc=$(hum ${f[1]})
-    quot=$(hum ${f[2]})
-    lim=$(hum ${f[3]})
-    files=$(hum ${f[5]})
-    fquot=$(hum ${f[6]})
-    flim=$(hum ${f[7]})
-    printf "%-15s %7s %7s %7s %7s %7s %7s %7s %7s\n" ${f[0]} \
-	$spc $quot $lim ${f[4]} $files $fquot $flim ${f[8]}
+    fsname="${f[0]}"
+    [ -n "$2" ] && fsname="$fsname $2"
+    spc="$(hum ${f[1]} 1024)"
+    quot="$(hum ${f[2]} 1024)"
+    lim="$(hum ${f[3]} 1024)"
+    files="$(hum ${f[5]})"
+    fquot="$(hum ${f[6]})"
+    flim="$(hum ${f[7]})"
+    printf "%-20s %5s %7s %7s %7s  %7s %7s %7s %7s\n" "$fsname" \
+	"$spc" "$quot" "$lim" ${f[4]} "$files" "$fquot" "$flim" ${f[8]}
 }
 
 
 echo "User quotas for $u"
 IFS=
-{ 
+{
     read -r
     read -r
     echo $REPLY
@@ -70,11 +78,19 @@ IFS=
     echo ${line/ \/home\/+([a-z0-9]) /\/home           }
 } < <(/usr/bin/quota -u $u --show-mntpoint -w --hide-device -s)
 
+# Scratch group quota
+{
+    read -r
+    read -r
+    read -r
+    print_lquota $REPLY "(user qta)"
+} < <(lfs quota -g $u $lfs)
+# Scratch user quota
 { 
     read -r
     read -r
     read -r
-    print_lquota $REPLY
+    print_lquota $REPLY "(total use)"
 } < <(lfs quota -u $u $lfs)
 
 echo
@@ -87,14 +103,14 @@ print_lquota_grp() {
     if [[ ${f[1]} -eq 0 && ${f[5]} -eq 0 ]];then
 	return # No usage by this user/group
     fi
-    spc=$(hum ${f[1]})
-    quot=$(hum ${f[2]})
-    lim=$(hum ${f[3]})
-    files=$(hum ${f[5]})
-    fquot=$(hum ${f[6]})
-    flim=$(hum ${f[7]})
+    spc="$(hum ${f[1]} 1024)"
+    quot="$(hum ${f[2]} 1024)"
+    lim="$(hum ${f[3]} 1024)"
+    files="$(hum ${f[5]})"
+    fquot="$(hum ${f[6]})"
+    flim="$(hum ${f[7]})"
     printf "%-12s %-20s %7s %7s %7s %7s %7s %7s %7s %7s\n" ${f[0]} \
-	$2 $spc $quot $lim ${f[4]} $files $fquot $flim ${f[8]}
+	$2 "$spc" "$quot" "$lim" ${f[4]} "$files" "$fquot" "$flim" ${f[8]}
 }
 
 
