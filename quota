@@ -28,6 +28,7 @@ if [ "$EUID" -eq 0 ]; then
 else
   u=$USER
 fi
+user_p=$(getent group $u | cut -f 3 -d ':')
 
 shopt -s extglob
 
@@ -84,7 +85,7 @@ IFS=
     read -r
     read -r
     print_lquota $REPLY "(user qta)"
-} < <(lfs quota -g $u $lfs)
+} < <(lfs quota -p $user_p $lfs)
 # Scratch user quota
 { 
     read -r
@@ -114,13 +115,15 @@ print_lquota_grp() {
 }
 
 
+
 while IFS= read -d $'\0' grp
 do
+    grp_p=$(getent group $grp | cut -f 3 -d ':')
     {
 	read -r
 	read -r
 	read -r
 	print_lquota_grp $REPLY $grp
-    } < <(lfs quota -g "$grp" "$lfs")
+    } < <(lfs quota -p "$grp_p" "$lfs")
 done < <(id -Gnz $u)
 
