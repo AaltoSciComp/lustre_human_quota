@@ -118,13 +118,11 @@ print_lquota_grp() {
 
 while IFS= read -d $'\0' grp
 do
-    #grp_p=$(getent group $grp | cut -f 3 -d ':')
     grp_name=$(getent group $grp | cut -f 1 -d ":")
     {
 	read -r
 	read -r
 	read -r
-	#echo REPLY $REPLY
 	print_lquota_grp $REPLY $grp_name
     } < <(lfs quota -p "$grp" "$lfs")
 done < <(id -Gz $u)
