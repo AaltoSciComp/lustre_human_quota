@@ -1,8 +1,10 @@
 #!/bin/bash
 
 # Print disk quotas for NFS and Lustre in a human readable format
-# https://github.com/jabl/lustre_human_quota
-
+#  https://github.com/AaltoSciComp/lustre_human_quota
+#
+#   Forked from https://github.com/jabl/lustre_human_quota
+#
 #    Copyright (C) 2016  Janne Blomqvist
 #
 #    This program is free software: you can redistribute it and/or modify
